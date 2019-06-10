@@ -352,7 +352,7 @@ pretrain_length = batch_size                        # number of experiences stor
 memory_size = 1000000                               # number of experiences the memory can store in capacity
 
 # toggle to see agent in training or not
-training = True
+training = False
 
 # toggle to render the environment or not
 episode_render = True
