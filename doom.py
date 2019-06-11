@@ -1,3 +1,5 @@
+import sys, getopt
+
 import tensorflow as tf
 
 import numpy as np
@@ -197,40 +199,6 @@ def initialize_environment():
     return game, possible_actions
 
 '''
-Test the environment with random actions
-'''
-def test_environment():
-    game = DoomGame()
-    game.load_config("basic.cfg")
-    game.set_doom_scenario_path("basic.wad")
-    game.init()
-
-    # list possible actions
-    left = [1, 0, 0]
-    right = [0, 1, 0]
-    shoot = [0, 0, 1]
-    actions = [left, right, shoot]
-
-    episodes = 10
-    for i in range(episodes):
-        game.new_episode()
-        while not game.is_episode_finished():
-            state = game.get_state()
-            img = state.screen_buffer
-            misc = state.game_variables
-            action = random.choice(actions)
-            print(action)
-            reward = game.make_action(action)
-            print("\treward:", reward)
-            time.sleep(0.02)
-        print("Result:", game.get_total_reward())
-        time.sleep(2)
-    game.close()
-
-#test_environment()
-game, possible_actions = initialize_environment()
-
-'''
 Preprocess frames to reduce state complexity by grayscaling, cropping, and normalizing pixel values
 '''
 def preprocess_frame(frame):
@@ -248,21 +216,7 @@ def preprocess_frame(frame):
     return preprocessed_frame
 
 '''
-Training the agent
-    1. Initialize weights, environment, and decay rate
-    2. For episode to max_episode, do
-        i. Make a new episode
-        ii. Set step to 0
-        iii. Observe the first state s_0
-
-        iv. While step < max_steps, do
-            1. Increase decay_rate
-            2. Using epsilon, either select a random action a_t or pick the max Q-value a_t = argmax_a Q(s_t,a_t)
-            3. Execute action a in the simulator and observe the reward r_t+1 and new state s_t+1
-            4. Store transition $
-            5. Sample random mini-batch from D: $$
-            6. Set Qhat = r if the episode ends at +1, otherwise set Qhat = r + gamma * max_a * Q(s',a')
-            7. Make a gradient descent step with loss (Qhat - Q(s,a))^2
+Given parameters for the epsilon greedy strategy, pick an action for exploitation vs exploration
 '''
 def predict_action(explore_start, explore_stop, decay_rate, decay_step, state, actions):
     ## epsilon greedy strategy
@@ -299,12 +253,6 @@ How the stack works:
     2. Add new frames to the deque at each time step to create a new stacked frame
     3. Each episode should start with a new stack with 4 new frames
 '''
-# we initially stack 4 frames
-stack_size = 4
-
-# initialize the deque with four arrays for each image (initialized to zero)
-stacked_frames = deque([np.zeros((84,84), dtype = np.int) for i in range(stack_size)], maxlen=4)
-
 def stack_frames(stacked_frames, state, is_new_episode):
     # preprocess frame
     frame = preprocess_frame(state)
@@ -329,6 +277,9 @@ def stack_frames(stacked_frames, state, is_new_episode):
     
     return stacked_state, stacked_frames
 
+# initialize the environment
+game, possible_actions = initialize_environment()
+
 # model hyperparameters
 state_size = [84,84,4]                              # input is a stack of 4 preprocessed frames (width, height, channels)
 action_size = game.get_available_buttons_size()     # 3 possible actions: move left, move right, shoot
@@ -351,11 +302,14 @@ gamma = 0.95                                        # discount factor
 pretrain_length = batch_size                        # number of experiences stored in memory when first initialized
 memory_size = 1000000                               # number of experiences the memory can store in capacity
 
+# we initially stack 4 frames
+stack_size = 4
+
+# initialize the deque with four arrays for each image (initialized to zero)
+stacked_frames = deque([np.zeros((84,84), dtype = np.int) for i in range(stack_size)], maxlen=4)
+
 # toggle to see agent in training or not
 training = False
-
-# toggle to render the environment or not
-episode_render = True
 
 # reset the graph
 tf.reset_default_graph()
@@ -423,6 +377,23 @@ write_op = tf.summary.merge_all()
 # save our model with Saver
 saver = tf.train.Saver()
 
+'''
+Training the agent
+    1. Initialize weights, environment, and decay rate
+    2. For episode to max_episode, do
+        i. Make a new episode
+        ii. Set step to 0
+        iii. Observe the first state s_0
+
+        iv. While step < max_steps, do
+            1. Increase decay_rate
+            2. Using epsilon, either select a random action a_t or pick the max Q-value a_t = argmax_a Q(s_t,a_t)
+            3. Execute action a in the simulator and observe the reward r_t+1 and new state s_t+1
+            4. Store transition $
+            5. Sample random mini-batch from D: $$
+            6. Set Qhat = r if the episode ends at +1, otherwise set Qhat = r + gamma * max_a * Q(s',a')
+            7. Make a gradient descent step with loss (Qhat - Q(s,a))^2
+'''
 if training:
     with tf.Session() as sess:
         # initialize variables
@@ -554,11 +525,8 @@ if training:
                 save_path = saver.save(sess, "./dqn_model/dqn_model.ckpt")
                 print("Model Saved")
 
-# test the agent
 with tf.Session() as sess:
     game, possible_actions = initialize_environment()
-
-    total_score = 0
 
     # load the trained model
     saver.restore(sess, "./dqn_model/dqn_model.ckpt")
@@ -599,6 +567,30 @@ with tf.Session() as sess:
         print("Score: ", score)
 
     game.close()
+
+'''
+def main(argv):
+    inputfile = ''
+    outputfile = ''
+    try:
+        opts, args = getopt.getopt(argv,"hi:o:",["ifile=","ofile="])
+    except getopt.GetoptError:
+        print('test.py -i <inputfile> -o <outputfile>')
+        sys.exit(2)
+    for opt, arg in opts:
+        if opt == '-h':
+            print('test.py -i <inputfile> -o <outputfile>')
+            sys.exit()
+        elif opt in ("-i", "--ifile"):
+            inputfile = arg
+        elif opt in ("-o", "--ofile"):
+            outputfile = arg
+    print('Input file is "', inputfile)
+    print('Output file is "', outputfile)
+
+if __name__ == "__main__":
+    main(sys.argv[1:])
+'''
 
 
 
