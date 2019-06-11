@@ -1,4 +1,4 @@
-import sys, getopt
+import argparse
 
 import tensorflow as tf
 
@@ -277,6 +277,18 @@ def stack_frames(stacked_frames, state, is_new_episode):
     
     return stacked_state, stacked_frames
 
+'''
+Parse arguments to use for training or testing a DQN agent
+    1. mode: training or testing
+    2. model: model to train or test
+    3. episodes: number of episodes to train or test for
+'''
+parser = argparse.ArgumentParser(description="train or test a DQN agent with a specified model")
+parser.add_argument("t", help="specify mode for 'training' or 'testing'")
+parser.add_argument("m", help="the model to train or test with")
+parser.add_argument("ep", type=int, help="the number of episodes to run for")
+args = parser.parse_args()
+
 # initialize the environment
 game, possible_actions = initialize_environment()
 
@@ -286,7 +298,8 @@ action_size = game.get_available_buttons_size()     # 3 possible actions: move l
 learning_rate = 0.0002                              # alpha (learning rate)
 
 # training hyperparameters
-total_episodes = 500                                # total episodes for training
+total_episodes = args.ep                            # total episodes for training or testing
+
 max_steps = 100                                     # max possible steps for one episode
 batch_size = 64
 
@@ -308,8 +321,8 @@ stack_size = 4
 # initialize the deque with four arrays for each image (initialized to zero)
 stacked_frames = deque([np.zeros((84,84), dtype = np.int) for i in range(stack_size)], maxlen=4)
 
-# toggle to see agent in training or not
-training = False
+# mode to see the agent in training or testing
+mode = args.t
 
 # reset the graph
 tf.reset_default_graph()
@@ -377,8 +390,11 @@ write_op = tf.summary.merge_all()
 # save our model with Saver
 saver = tf.train.Saver()
 
+# save the path to use for our saver
+save_path = "./dqn_model/" + args.m + ".ckpt"
+
 '''
-Training the agent
+Training the agent (if specified mode is training)
     1. Initialize weights, environment, and decay rate
     2. For episode to max_episode, do
         i. Make a new episode
@@ -394,7 +410,7 @@ Training the agent
             6. Set Qhat = r if the episode ends at +1, otherwise set Qhat = r + gamma * max_a * Q(s',a')
             7. Make a gradient descent step with loss (Qhat - Q(s,a))^2
 '''
-if training:
+if mode == "training":
     with tf.Session() as sess:
         # initialize variables
         sess.run(tf.global_variables_initializer())
@@ -522,76 +538,81 @@ if training:
 
             # save model every 5 episodes
             if episode % 5 == 0:
-                save_path = saver.save(sess, "./dqn_model/dqn_model.ckpt")
+                saver.save(sess, save_path)
                 print("Model Saved")
 
-with tf.Session() as sess:
-    game, possible_actions = initialize_environment()
+'''
+Test the agent! (if specified mode is testing)
+'''
+if mode == "testing":
+    # set up dynamic plotting
+    plt.ion()
+    ax = plt.gca()
+    ax.set_autoscale_on(True)
 
-    # load the trained model
-    saver.restore(sess, "./dqn_model/dqn_model.ckpt")
-    game.init()
-    for i in range(1):
-        done = False
-        game.new_episode()
+    x = np.arange(total_episodes)
+    y = np.arange(total_episodes)
+    line, = ax.plot(x,y)
 
-        state = game.get_state().screen_buffer
-        state, stacked_frames = stack_frames(stacked_frames, state, True)
+    with tf.Session() as sess:
+        game, possible_actions = initialize_environment()
 
-        while not game.is_episode_finished():
-            Qs = sess.run(
-                DQN.output, 
-                feed_dict = {
-                    DQN.inputs_: state.reshape((1, *state.shape))
-                }
-            )
+        aggregate_score = 0
 
-            # take the highest Q-value (effectively best action)
-            choice = np.argmax(Qs)
-            action = possible_actions[int(choice)]
+        # load the trained model
+        saver.restore(sess, save_path)
+        game.init()
+        for i in range(total_episodes):
+            done = False
+            game.new_episode()
 
-            game.make_action(action)
-            done = game.is_episode_finished()
+            state = game.get_state().screen_buffer
+            state, stacked_frames = stack_frames(stacked_frames, state, True)
+
+            while not game.is_episode_finished():
+                Qs = sess.run(
+                    DQN.output, 
+                    feed_dict = {
+                        DQN.inputs_: state.reshape((1, *state.shape))
+                    }
+                )
+
+                # take the highest Q-value (effectively best action)
+                choice = np.argmax(Qs)
+                action = possible_actions[int(choice)]
+
+                game.make_action(action)
+                done = game.is_episode_finished()
+                score = game.get_total_reward()
+
+                if done:
+                    break
+
+                else:
+                    #print("next state")
+                    next_state = game.get_state().screen_buffer
+                    next_state, stacked_frames = stack_frames(stacked_frames, next_state, False)
+                    state = next_state
+            
             score = game.get_total_reward()
+            y[i] = score
+            aggregate_score += score
+            print("Score for episode", i, ":", score)
 
-            if done:
-                break
+            # update dynamic plot
+            line.set_ydata(y)
+            ax.relim()
+            ax.autoscale_view(True,True,True)
+            plt.draw()
+            plt.pause(0.1)
 
-            else:
-                print("next state")
-                next_state = game.get_state().screen_buffer
-                next_state, stacked_frames = stack_frames(stacked_frames, next_state, False)
-                state = next_state
-        
-        score = game.get_total_reward()
-        print("Score: ", score)
+        print("Aggregate score for all episodes:", aggregate_score)
+        print("Mean score for all episodes:", aggregate_score/total_episodes)
+        game.close()
 
-    game.close()
-
-'''
-def main(argv):
-    inputfile = ''
-    outputfile = ''
-    try:
-        opts, args = getopt.getopt(argv,"hi:o:",["ifile=","ofile="])
-    except getopt.GetoptError:
-        print('test.py -i <inputfile> -o <outputfile>')
-        sys.exit(2)
-    for opt, arg in opts:
-        if opt == '-h':
-            print('test.py -i <inputfile> -o <outputfile>')
-            sys.exit()
-        elif opt in ("-i", "--ifile"):
-            inputfile = arg
-        elif opt in ("-o", "--ofile"):
-            outputfile = arg
-    print('Input file is "', inputfile)
-    print('Output file is "', outputfile)
-
-if __name__ == "__main__":
-    main(sys.argv[1:])
-'''
-
+        # keep dynamic plot open until closed
+        plt.ioff()
+        plt.show()
 
 
     
