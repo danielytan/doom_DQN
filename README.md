@@ -5,6 +5,7 @@ This is the implementation of an agent that plays a simple scenario (basic) from
 There are 3 possible actions (moving left, moving right, or shooting), and an episode finishes either when the monster in the scenario is eliminated or after timeout. The reward for successfully eliminating the monster is +101, and the rewards for missing or living (without eliminating the monster) are -5 and -1, respectively.
  
 Instructions for running:
+```
   usage: doom.py [-h] t m ep
 
   train or test a DQN agent with a specified model
@@ -16,7 +17,7 @@ Instructions for running:
 
   optional arguments:
     -h, --help  show this help message and exit
-    
+```
 If training is enabled, the agent will train for 'ep' episodes, and save the learned model into the dqn_model folder as 'm'. 
 
 If testing is enabled, the agent will test a learned model 'm' from the dqn_model folder for 'ep' episodes.
