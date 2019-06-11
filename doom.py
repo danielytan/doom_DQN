@@ -20,7 +20,7 @@ Deep Q-Learning Neural Network model
 
 How it works:
     1. Take a 4 frame stack as input
-    2. Run the input through 3 convolutional neural networks
+    2. Run the input through 3 convolutional layers
     3. Flatten
     4. Run through 2 fully connected layers
     5. Output a Q-value for each action
@@ -43,7 +43,7 @@ class DQN:
             self.target_Q = tf.placeholder(tf.float32, [None], name="target")
 
             """
-            First convolutional neural network:
+            First convolutional layer:
             CNN
             BatchNormalization
             ELU
@@ -70,7 +70,7 @@ class DQN:
             ## --> [20, 20, 32]
 
             """
-            Second convolutional neural network:
+            Second convolutional layer:
             CNN
             BatchNormalization
             ELU
@@ -97,7 +97,7 @@ class DQN:
             ## --> [9, 9, 64]
 
             """
-            Third convolutional neural network:
+            Third convolutional layer:
             CNN
             BatchNormalization
             ELU
