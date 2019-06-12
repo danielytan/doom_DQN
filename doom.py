@@ -313,7 +313,7 @@ gamma = 0.95                                        # discount factor
 
 # memory hyperparameters
 pretrain_length = batch_size                        # number of experiences stored in memory when first initialized
-memory_size = 1000000                               # number of experiences the memory can store in capacity
+memory_size = 100000                                # number of experiences the memory can store in capacity
 
 # we initially stack 4 frames
 stack_size = 4
