@@ -25,3 +25,5 @@ If testing is enabled, the agent will test a learned model 'm' from the dqn_mode
 
 ## Results
 These are the results of testing a DQN agent for 1000 episodes (trained for 500 episodes):
+![Graph (max score is 101)](https://github.com/danielytan/doom_DQN/blob/master/results/500training%2C1000testing.png)
+![Statistics](https://github.com/danielytan/doom_DQN/blob/master/results/500training%2C1000testing_stats.png)
