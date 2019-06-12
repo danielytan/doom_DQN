@@ -24,19 +24,16 @@ If training is enabled, the agent will train for 'ep' episodes, and save the lea
 If testing is enabled, the agent will test a learned model 'm' from the dqn_model folder for 'ep' episodes.
 
 ## Results
-Each agent is trained for 500 episodes and tested for 1000 episodes. 
+Each agent is trained for 500 episodes and tested for 1000 episodes, with varying experience replay buffer sizes. 
 The x-axis for each agent's graph is the number of episodes (1000), and the y-axis for the graph is the score (capped at 101.)
 
-Based on the findings from a paper examining experience replay (https://arxiv.org/pdf/1712.01275.pdf), I would have expected that constraining the experience replay buffer would produce slightly better results (i.e. higher mean score), but it turns out that constraining the buffer lowers the mean progressively. This may indicate that a 1,000,000 experience replay buffer may be _too_ small, or is of just the right size (i.e. perhaps increasing the buffer size from this point would decrease the score.)
+Based on the findings from a paper examining experience replay (https://arxiv.org/pdf/1712.01275.pdf), I would have expected that constraining the experience replay buffer might produce slightly better results (i.e. higher mean score), but it turns out that constraining the buffer lowers the mean progressively. This may indicate that a 1,000,000 experience replay buffer may be _too_ small, or is of just the right size (i.e. perhaps increasing the buffer size from this point would decrease the score.)
 
 ###### Agent with a 1,000,000 experience replay buffer
-![Graph (max score is 101)](https://github.com/danielytan/doom_DQN/blob/master/results/500training%2C1000testing.png=100x100)
-![Statistics](https://github.com/danielytan/doom_DQN/blob/master/results/500training%2C1000testing_stats.png=100x100)
+<img src="https://github.com/danielytan/doom_DQN/blob/master/results/500training%2C1000testing.png" alt="Graph (max score is 101)" width="500"/><img src="https://github.com/danielytan/doom_DQN/blob/master/results/500training%2C1000testing_stats.png" alt="Statistics" width="250"/>
 
 ###### Agent with a 100,000 experience replay buffer
-![Graph (max score is 101)](https://github.com/danielytan/doom_DQN/blob/master/results/experiment1_test0.png=100x100)
-![Statistics](https://github.com/danielytan/doom_DQN/blob/master/results/experiment1_test0_stats.png=100x100)
+<img src="https://github.com/danielytan/doom_DQN/blob/master/results/experiment1_test0.png" alt="Graph (max score is 101)" width="500"/><img src="https://github.com/danielytan/doom_DQN/blob/master/results/experiment1_test0_stats.png" alt="Statistics" width="250"/>
 
 ###### Agent with a 1,000 experience replay buffer
-![Graph (max score is 101)](https://github.com/danielytan/doom_DQN/blob/master/results/experiment0_test0.png=100x100)
-![Statistics](https://github.com/danielytan/doom_DQN/blob/master/results/experiment0_test0_stats.png=100x100)
+<img src="https://github.com/danielytan/doom_DQN/blob/master/results/experiment0_test0.png" alt="Graph (max score is 101)" width="500"/><img src="https://github.com/danielytan/doom_DQN/blob/master/results/experiment0_test0_stats.png" alt="Statistics" width="250"/>
